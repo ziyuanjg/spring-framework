@@ -950,7 +950,8 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		long startTime = System.currentTimeMillis();
 		Throwable failureCause = null;
 
-		//首先获取
+		//首先获取此线程在缓存中的上下文及参数信息
+		//并创建此连接的上下文及参数实例，并与此线程绑定
 		LocaleContext previousLocaleContext = LocaleContextHolder.getLocaleContext();
 		LocaleContext localeContext = buildLocaleContext(request);
 
@@ -960,6 +961,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
 		asyncManager.registerCallableInterceptor(FrameworkServlet.class.getName(), new RequestBindingInterceptor());
 
+		//绑定此连接与此线程
 		initContextHolders(request, localeContext, requestAttributes);
 
 		try {
@@ -979,6 +981,7 @@ public abstract class FrameworkServlet extends HttpServletBean implements Applic
 		}
 
 		finally {
+			//将此连接与此线程解绑
 			resetContextHolders(request, previousLocaleContext, previousAttributes);
 			if (requestAttributes != null) {
 				requestAttributes.requestCompleted();

@@ -871,8 +871,7 @@ public class DispatcherServlet extends FrameworkServlet {
 					" processing " + request.getMethod() + " request for [" + getRequestUri(request) + "]");
 		}
 
-		// Keep a snapshot of the request attributes in case of an include,
-		// to be able to restore the original attributes after the include.
+		// 处理INCLUDE类型的连接
 		Map<String, Object> attributesSnapshot = null;
 		if (WebUtils.isIncludeRequest(request)) {
 			attributesSnapshot = new HashMap<String, Object>();
@@ -885,7 +884,7 @@ public class DispatcherServlet extends FrameworkServlet {
 			}
 		}
 
-		// Make framework objects available to handlers and view objects.
+		//在request域中设置上下文及处理器
 		request.setAttribute(WEB_APPLICATION_CONTEXT_ATTRIBUTE, getWebApplicationContext());
 		request.setAttribute(LOCALE_RESOLVER_ATTRIBUTE, this.localeResolver);
 		request.setAttribute(THEME_RESOLVER_ATTRIBUTE, this.themeResolver);
@@ -937,14 +936,14 @@ public class DispatcherServlet extends FrameworkServlet {
 				processedRequest = checkMultipart(request);
 				multipartRequestParsed = (processedRequest != request);
 
-				// Determine handler for the current request.
+				// 获取HandlerExecutionChain实例
 				mappedHandler = getHandler(processedRequest);
 				if (mappedHandler == null || mappedHandler.getHandler() == null) {
 					noHandlerFound(processedRequest, response);
 					return;
 				}
 
-				// Determine handler adapter for the current request.
+				// 从handlerAdapters中匹配一个支持当前handler的实例
 				HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
 
 				// Process last-modified header, if supported by the handler.
@@ -960,11 +959,12 @@ public class DispatcherServlet extends FrameworkServlet {
 					}
 				}
 
+				//执行当前请求接口的拦截器的preHandle方法，如果不符合业务要求，则不会向下执行，如权限控制等
 				if (!mappedHandler.applyPreHandle(processedRequest, response)) {
 					return;
 				}
 
-				// Actually invoke the handler.
+				// 执行请求的接口
 				mv = ha.handle(processedRequest, response, mappedHandler.getHandler());
 
 				if (asyncManager.isConcurrentHandlingStarted()) {
@@ -972,6 +972,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				}
 
 				applyDefaultViewName(processedRequest, mv);
+				//执行当前请求接口的拦截器的postHandle方法
 				mappedHandler.applyPostHandle(processedRequest, response, mv);
 			}
 			catch (Exception ex) {
@@ -982,6 +983,7 @@ public class DispatcherServlet extends FrameworkServlet {
 				// making them available for @ExceptionHandler methods and other scenarios.
 				dispatchException = new NestedServletException("Handler dispatch failed", err);
 			}
+			//执行当前请求接口的拦截器的afterCompletion方法
 			processDispatchResult(processedRequest, response, mappedHandler, mv, dispatchException);
 		}
 		catch (Exception ex) {
